@@ -46,9 +46,12 @@ class ChatClient(
     private suspend fun listenForMessages() {
         withContext(Dispatchers.IO) {
             try {
-                var message: String?
+                var message: String? = null
                 while (isConnected && clientSocket?.isConnected == true && reader?.readLine().also { message = it } != null) {
-                    onMessageReceived("$message") // Server messages are already prefixed
+                    message?.let {
+                        onMessageReceived("$message") // Server messages are already prefixed
+                    }
+
                 }
             } catch (e: Exception) {
                 if (isConnected) { // Avoid error message if disconnecting normally

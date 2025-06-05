@@ -63,7 +63,7 @@ class ChatServer(
         try {
             val reader = BufferedReader(InputStreamReader(clientSocket.inputStream))
             val clientAddress = clientSocket.inetAddress.hostAddress
-            var message: String?
+            var message: String? = null
             while (clientSocket.isConnected && reader.readLine().also { message = it } != null) {
                 val displayMessage = "Client ($clientAddress): $message"
                 onMessageReceived(displayMessage)
