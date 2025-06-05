@@ -93,14 +93,26 @@ class ChatServer(
     }
 
     private fun broadcastMessage(message: String, sender: Socket?) {
+        val clientsToRemove = mutableListOf<Socket>()
         clientSockets.forEach { (socket, writer) ->
             if (socket != sender) { // Don't send back to the original sender
                 try {
                     writer.println(message)
                 } catch (e: Exception) {
-                    // Handle write error, maybe remove client
                     onMessageReceived("Error sending to ${socket.inetAddress.hostAddress}: ${e.message}")
+                    // Mark for removal to avoid ConcurrentModificationException
+                    clientsToRemove.add(socket)
                 }
+            }
+        }
+        clientsToRemove.forEach { socket ->
+            val removedWriter = clientSockets.remove(socket) // Remove from map
+            removedWriter?.close() // Close the writer if it was found and removed
+            try {
+                socket.close() // Attempt to clean up the socket
+                onMessageReceived("Disconnected client due to send error: ${socket.inetAddress.hostAddress}")
+            } catch (closeException: Exception) {
+                onMessageReceived("Error closing socket for client ${socket.inetAddress.hostAddress} after send error: ${closeException.message}")
             }
         }
     }
